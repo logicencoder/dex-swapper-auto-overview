@@ -1,55 +1,37 @@
 # DEX Swapper AUTO
 
-Monitoring a swap opportunity is only part of the work: the trader also needs to inspect the amount, fees, wallet readiness and what happened after an attempt. DEX Swapper AUTO brings those tasks into one trading dashboard and adds threshold-based automation for supported DNX sales. It helps keep the market comparison, manual controls and automatic trading preferences in the same workspace.
+Selling a token when the DEX price is above the exchange price takes quotes, fees, wallet readiness and fast execution at once. DEX Swapper AUTO is a self-hosted trading dashboard that compares DEX quotes for configured amounts of DNX with the MEXC price about ten times a second, lets the operator swap by hand, and can start a DNX-to-USDC sale automatically when the price gap passes a threshold. Swaps are sent to MEV builders first, and every attempt, real or dry-run, is recorded.
 
 ## Tech stack
 
 | Layer | Technologies |
 |---|---|
-| Application | Python; FastAPI; Web3.py |
-| Dashboard | JavaScript; HTML; CSS |
-| Trading ecosystem | Ethereum; 1inch; Uniswap; MEXC market data |
+| Application | Python with FastAPI, Web3.py and a WebSocket feed to the dashboard |
+| Quotes and routing | 1inch router and API, Uniswap V3 and direct pool quotes, an RPC router |
+| Market data | MEXC price feed |
+| Submission | MEV builders (Titan, Beaver, Flashbots) with the public mempool as fallback |
+| History | SQLite swap history with profit and loss |
+| Dashboard | JavaScript, HTML and CSS |
 
-## Read the opportunity before acting
+## The arbitrage table
 
-The dashboard puts the supported swap quotes, exchange-price comparison, wallet balances and fee context together. Users can inspect the amounts they follow and compare the displayed spread without rebuilding the same view across several tools. A displayed spread is a screening observation; fees, liquidity and execution still affect the result.
+The dashboard's central table lists the configured amounts. For each, it shows the DEX sell price, the MEXC price and the profit in percent, refreshed about every 100 milliseconds. It sits next to wallet balances, gas settings and connection indicators, so the operator reads the opportunity and the readiness to act on one screen.
 
-Review the displayed opportunity and proposed trade conditions before choosing how to proceed. The comparison gives the operator a place to assess the current setup rather than treating an automatic signal as an instruction.
+## Manual swaps
 
-## Keep manual trading close at hand
+An amount is picked from the table, a quote is fetched and the swap is confirmed by the operator. The Trading settings hold amount, slippage and gas preferences, the Addresses tab keeps a book of frequently used addresses, and a quote-source choice selects automatic, unoswap2, direct pool, the 1inch API or Uniswap V3, with feedback when a source is unavailable.
 
-Manual swap controls remain available alongside automatic mode. Trading preferences include the amount, slippage and gas settings, while the address book keeps frequently used addresses accessible. Connection indicators and balance refresh controls help establish whether the information needed for the next action is available.
+## Auto-Swap
 
-Manual controls remain useful when a particular trade needs individual attention. They let the operator work from the same market context used to review the automatic strategy.
+When enabled, Auto-Swap looks at the table and picks the row with the largest dollar profit among rows above the threshold, which defaults to 10 percent. It waits at least 12 seconds between swaps and stops after three failures in a row. Before sending, it re-quotes with fresh prices and skips the attempt when the gap has disappeared, and those skips are recorded as stale. A dry-run mode makes the same decisions and records what it would have done without sending anything, and Auto-Swap is off by default. The last 50 attempts are kept with their status: success, failed, error, skipped as stale or dry run.
 
-## Define the automatic DNX sale
+## Approver and submission
 
-Auto-Swap can trigger a supported DNX-to-USDC sale when the configured spread threshold is reached. Users can enable or disable automation, choose a cooldown and set a failure limit. Amount-related gas preferences support reviewing the intended trade sizes rather than relying on one fee preference for every amount.
+The Approver tab lists token allowances beside balances, checks an allowance and sends an explicit approval, which is a separate action from viewing the wallet. Titan, Beaver and Flashbots builders can be switched on and off, with Titan, Beaver and Flashbots enabled by default and their connection state shown. A nonce coordinator keeps transactions in order, and a block monitor watches a submitted transaction.
 
-Dry-run mode lets users inspect the automatic decision without sending a real swap. It is useful for checking the chosen threshold and observing when an attempt would be made. It does not establish that the same trade would be filled or profitable on a live market.
+## History and preferences
 
-The automatic-sale settings express the operator's intended limits. Review the amount and conditions together so a saved configuration remains understandable when returning to the desk.
-
-## Inspect quotes, allowances and submission choices
-
-Quote-source selection gives users a choice among the supported pricing options, with feedback when an option is unavailable. The Approver view shows token allowances beside balances and supports allowance checks and explicit approvals. Approval actions are separate from simply viewing wallet information and can grant broad spending permission.
-
-Supported builder selections expose enabled and connection states. The optional transaction watcher adds visibility into the watched activity. These controls provide operational context; they do not promise protection from every adverse trading condition.
-
-Quote and allowance information belongs close to the decision to submit. Inspecting these details in the same session helps avoid switching between disconnected tools to understand the proposed action.
-
-## Review attempts and their outcomes
-
-The Swap History view and automatic-attempt history help users revisit trading activity and distinguish successful, failed, skipped or dry-run outcomes. Logs provide supporting feedback when an operation cannot proceed. This makes it easier to connect a dashboard action with its recorded result.
-
-History turns an attempted action into something that can be reviewed later. Compare the recorded outcome with the intended conditions before deciding whether a setting needs adjustment.
-
-## Make the dashboard fit the session
-
-Appearance and display preferences cover fonts, panel dimensions, spacing, visible information and the Auto-Swap banner. Users can adjust the workspace around the information they need and reset the presentation when required. This AUTO edition extends the separate manual-focused DEX Swapper product with its own automation controls.
-
-Preferences and diagnostics support longer sessions as well as quick checks. Keep the current task readable and return to the recorded details when an attempt needs explanation.
-
+Swap History records each swap with its outcome and computes profit and loss from a SQLite store. Appearance and Display tabs set fonts, panel dimensions, spacing, visible information and the Auto-Swap banner, and a reset restores the defaults. This AUTO edition extends the manual DEX Swapper with the automation controls.
 
 ---
 
